@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/copy-ort-assets.mjs",
     "dev": "next dev",
+    "prebuild": "node scripts/copy-ort-assets.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -14,6 +16,7 @@
     "fflate": "^0.8.3",
     "konva": "^10.7.1",
     "next": "16.4.0",
+    "onnxruntime-web": "1.21.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-easy-crop": "^6.2.4",

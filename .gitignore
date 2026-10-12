@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# копируется из node_modules скриптом scripts/copy-ort-assets.mjs
+/public/ort/

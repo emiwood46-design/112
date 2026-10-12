@@ -36,9 +36,32 @@ export interface Item {
   /** Размер полноразмерного изображения в пикселях */
   width: number;
   height: number;
+  /** Силуэт вещи — для автоматической посадки на манекен (см. domain/fit.ts) */
+  shape?: ItemShape;
+  /** Положение вещи на теле человека, если вещь вырезана из фото образа */
+  bodyFit?: BodyFit;
   createdAt: number;
   updatedAt: number;
   // На будущее (синхронизация): ownerId?: string; syncedAt?: number; version?: number;
+}
+
+/**
+ * Профиль силуэта: изображение делится на SHAPE_ROWS горизонтальных полос,
+ * для каждой — ширина непрозрачной части и её центр (в пикселях изображения).
+ */
+export interface ItemShape {
+  widths: number[];
+  centers: number[];
+}
+
+/**
+ * Положение вещи относительно человека на исходном фото, в долях его роста:
+ * cx — смещение центра вещи от центра тела по X, cy — от макушки по Y, h — высота вещи.
+ */
+export interface BodyFit {
+  cx: number;
+  cy: number;
+  h: number;
 }
 
 /** Данные вещи, которые задаёт пользователь (без служебных полей). */

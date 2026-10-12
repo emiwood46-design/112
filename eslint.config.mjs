@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // копия WASM-сборки onnxruntime-web
+    "public/ort/**",
   ]),
 ]);
 

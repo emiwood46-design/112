@@ -5,7 +5,7 @@
  *   чтобы удалять фон и без сети.
  * Данные гардероба лежат в IndexedDB и в SW не участвуют.
  */
-const VERSION = "v1";
+const VERSION = "v2";
 const SHELL_CACHE = `wardrobe-shell-${VERSION}`;
 const STATIC_CACHE = `wardrobe-static-${VERSION}`;
 const MODEL_CACHE = "wardrobe-bg-model"; // не версионируем — модель большая
@@ -88,6 +88,9 @@ self.addEventListener("fetch", (event) => {
   }
   // RSC-запросы клиентской навигации Next не кешируем: при офлайне Next сам перейдёт на полную загрузку
   if (url.searchParams.has("_rsc") || request.headers.get("RSC")) return;
+  // Скрипты Web Worker не трогаем: Turbopack запускает все воркеры через один загрузчик,
+  // а какой код грузить, передаёт в параметрах адреса. Ответ из кеша подменил бы воркер.
+  if (request.destination === "worker" || url.pathname.includes("turbopack-worker")) return;
 
   if (request.mode === "navigate") {
     event.respondWith(networkFirstPage(request));

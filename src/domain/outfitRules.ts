@@ -1,16 +1,23 @@
 import { matchesSeason } from "./categories";
+import { fitPlacement } from "./fit";
 import { CATEGORY_SLOT, getSlot } from "./slots";
 import type { Item, MannequinKind, OutfitLayer, Season, SlotId } from "./types";
 
-/** Позиция и масштаб вещи «по умолчанию» в её слоте. */
+/**
+ * Позиция и масштаб вещи «по умолчанию»: для основных слотов — автоматическая посадка
+ * на фигуру (domain/fit.ts), иначе — вписывание в прямоугольник слота.
+ */
 export function defaultPlacement(
-  item: Pick<Item, "width" | "height">,
+  item: Pick<Item, "width" | "height" | "category" | "shape" | "bodyFit">,
   slotId: SlotId,
   mannequin: MannequinKind,
   indexInSlot = 0,
 ): Pick<OutfitLayer, "x" | "y" | "scale" | "rotation"> {
   const slot = getSlot(slotId, mannequin);
   const scale = Math.min(slot.maxWidth / item.width, slot.maxHeight / item.height);
+  // Для сумок и аксессуаров силуэтной подгонки нет, но положение с фото образа учитываем
+  const fitted = fitPlacement(item, mannequin, scale);
+  if (fitted) return fitted;
   // Несколько аксессуаров/сумок раскладываем веером, чтобы не лежали друг на друге
   const offsets = [
     [0, 0],

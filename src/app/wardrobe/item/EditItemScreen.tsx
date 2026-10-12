@@ -6,6 +6,7 @@ import { useState } from "react";
 import { BlobImage } from "@/components/items/BlobImage";
 import { ImageCropper } from "@/components/items/ImageCropper";
 import { ItemForm } from "@/components/items/ItemForm";
+import { MaskEditor } from "@/components/items/MaskEditor";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useToast } from "@/components/ui/Toast";
 import { getRepositories } from "@/data";
@@ -54,6 +55,7 @@ function EditItemForm({ item, back }: { item: Item; back: React.ReactNode }) {
   });
   const [saving, setSaving] = useState(false);
   const [cropBlob, setCropBlob] = useState<Blob | null>(null);
+  const [eraseBlob, setEraseBlob] = useState<Blob | null>(null);
 
   const repo = getRepositories().items;
 
@@ -81,6 +83,10 @@ function EditItemForm({ item, back }: { item: Item; back: React.ReactNode }) {
     const blob = await getRepositories().blobs.get(item.imageId);
     if (blob) setCropBlob(blob);
   };
+  const openEraser = async () => {
+    const blob = await getRepositories().blobs.get(item.imageId);
+    if (blob) setEraseBlob(blob);
+  };
 
   return (
     <>
@@ -90,11 +96,14 @@ function EditItemForm({ item, back }: { item: Item; back: React.ReactNode }) {
           <div className="checker aspect-[3/4] overflow-hidden rounded-3xl border border-line p-4">
             <BlobImage id={item.imageId} alt={item.name} className="size-full object-contain" />
           </div>
-          <div className="flex gap-2">
-            <button className="btn-ghost flex-1" onClick={openCrop}>
-              ✂️ Обрезать / повернуть
+          <div className="grid grid-cols-3 gap-2">
+            <button className="btn-ghost px-2" onClick={openEraser}>
+              🧽 Ластик
             </button>
-            <Link href={`/outfits/editor?add=${item.id}`} className="btn-ghost flex-1">
+            <button className="btn-ghost px-2" onClick={openCrop}>
+              ✂️ Обрезать
+            </button>
+            <Link href={`/outfits/editor?add=${item.id}`} className="btn-ghost px-2">
               Примерить
             </Link>
           </div>
@@ -120,7 +129,21 @@ function EditItemForm({ item, back }: { item: Item; back: React.ReactNode }) {
           onClose={() => setCropBlob(null)}
           onDone={async (b) => {
             setCropBlob(null);
+            // После обрезки привязка к телу с фото образа теряет смысл — посадка пойдёт по силуэту
             await repo.replaceImage(item.id, await buildItemImages(b));
+            toast("Изображение обновлено");
+          }}
+        />
+      )}
+
+      {eraseBlob && (
+        <MaskEditor
+          image={eraseBlob}
+          onClose={() => setEraseBlob(null)}
+          onDone={async (b) => {
+            setEraseBlob(null);
+            // Размер картинки не меняется — привязку к телу сохраняем
+            await repo.replaceImage(item.id, { ...(await buildItemImages(b)), bodyFit: item.bodyFit });
             toast("Изображение обновлено");
           }}
         />

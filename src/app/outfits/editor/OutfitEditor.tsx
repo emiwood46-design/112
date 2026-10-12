@@ -21,6 +21,7 @@ import {
 import { getSlot } from "@/domain/slots";
 import { SEASONS, type Item, type MannequinKind, type Outfit, type OutfitLayer, type Season } from "@/domain/types";
 import { useItems, useOutfit } from "@/hooks/useData";
+import { useShapeMigration } from "@/hooks/useShapeMigration";
 import { newId } from "@/lib/id";
 import { safeFilename, shareOrDownload } from "@/lib/share";
 
@@ -36,9 +37,11 @@ const EXPORT_HEIGHT = 1800;
 export function OutfitEditor() {
   const params = useSearchParams();
   const id = params.get("id");
-  const addId = params.get("add");
+  // ?add=id1,id2 — надеть эти вещи (например, вещи, только что вырезанные из фото образа)
+  const addParam = params.get("add") ?? "";
   const { data: outfit, loading: outfitLoading } = useOutfit(id);
   const { data: items } = useItems();
+  useShapeMigration(items);
 
   if ((id && outfitLoading) || !items) {
     return <div className="flex flex-1 items-center justify-center text-muted">Загрузка…</div>;
@@ -53,16 +56,23 @@ export function OutfitEditor() {
       </div>
     );
   }
-  return <EditorBody key={id ?? `new:${addId ?? ""}`} initial={outfit} addItemId={addId} items={items} />;
+  return (
+    <EditorBody
+      key={id ?? `new:${addParam}`}
+      initial={outfit}
+      addItemIds={addParam.split(",").filter(Boolean)}
+      items={items}
+    />
+  );
 }
 
 function EditorBody({
   initial,
-  addItemId,
+  addItemIds,
   items,
 }: {
   initial?: Outfit;
-  addItemId: string | null;
+  addItemIds: string[];
   items: Item[];
 }) {
   const router = useRouter();
@@ -74,15 +84,18 @@ function EditorBody({
   const [name, setName] = useState(initial?.name ?? "");
   const [season, setSeason] = useState<Season>(initial?.season ?? currentSeason());
   const [layers, setLayers] = useState<OutfitLayer[]>(() => {
-    const base = initial?.layers ?? [];
-    const toAdd = addItemId ? itemMap.get(addItemId) : undefined;
-    return toAdd ? addItemToLayers(base, toAdd, initial?.mannequin ?? "female", newId()) : base;
+    let next = initial?.layers ?? [];
+    for (const id of addItemIds) {
+      const it = itemMap.get(id);
+      if (it) next = addItemToLayers(next, it, initial?.mannequin ?? "female", newId());
+    }
+    return next;
   });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [saveOpen, setSaveOpen] = useState(false);
   const [randomOpen, setRandomOpen] = useState(false);
   const [busy, setBusy] = useState<"save" | "export" | null>(null);
-  const [dirty, setDirty] = useState(Boolean(addItemId));
+  const [dirty, setDirty] = useState(addItemIds.length > 0);
 
   // Вещи, удалённые из гардероба, в образе не показываем
   const visibleLayers = layers.filter((l) => itemMap.has(l.itemId));

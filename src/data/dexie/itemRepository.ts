@@ -2,7 +2,7 @@ import { filterItems } from "@/domain/filter";
 import type { Item, ItemDraft, ItemFilter } from "@/domain/types";
 import { newId } from "@/lib/id";
 import { Emitter } from "../emitter";
-import type { ItemImage, ItemRepository } from "../repositories";
+import type { ItemImage, ItemPatch, ItemRepository } from "../repositories";
 import type { DexieBlobStore } from "./blobStore";
 import type { WardrobeDB } from "./db";
 
@@ -36,6 +36,8 @@ export class DexieItemRepository implements ItemRepository {
       thumbId: newId(),
       width: img.width,
       height: img.height,
+      shape: img.shape,
+      bodyFit: img.bodyFit,
       createdAt: now,
       updatedAt: now,
     };
@@ -50,10 +52,10 @@ export class DexieItemRepository implements ItemRepository {
     return item;
   }
 
-  async update(id: string, patch: Partial<ItemDraft>): Promise<Item> {
+  async update(id: string, patch: ItemPatch, opts?: { touch?: boolean }): Promise<Item> {
     const cur = await this.db.items.get(id);
     if (!cur) throw new Error("Вещь не найдена");
-    const next: Item = { ...cur, ...patch, updatedAt: Date.now() };
+    const next: Item = { ...cur, ...patch, updatedAt: opts?.touch === false ? cur.updatedAt : Date.now() };
     await this.db.items.put(next);
     this.events.emit();
     return next;
@@ -68,6 +70,9 @@ export class DexieItemRepository implements ItemRepository {
       thumbId: newId(),
       width: img.width,
       height: img.height,
+      // Геометрия картинки изменилась — привязка к телу с фото образа больше не верна
+      shape: img.shape,
+      bodyFit: img.bodyFit,
       updatedAt: Date.now(),
     };
     await this.db.transaction("rw", this.db.items, this.db.blobs, async () => {

@@ -3,7 +3,7 @@
  * Сейчас реализация — IndexedDB (Dexie), см. ./dexie. Чтобы перейти на Supabase
  * или собственный API, достаточно написать новую реализацию и подключить её в ./index.ts.
  */
-import type { Item, ItemDraft, ItemFilter, Outfit, OutfitDraft } from "@/domain/types";
+import type { BodyFit, Item, ItemDraft, ItemFilter, ItemShape, Outfit, OutfitDraft } from "@/domain/types";
 
 export type Unsubscribe = () => void;
 
@@ -13,18 +13,25 @@ export interface ItemRepository {
   getMany(ids: string[]): Promise<Item[]>;
   /** Создаёт вещь, сохраняя изображение и миниатюру в BlobStore */
   create(draft: ItemDraft, image: ItemImage): Promise<Item>;
-  update(id: string, patch: Partial<ItemDraft>): Promise<Item>;
+  /** touch: false — служебное обновление, не поднимает вещь наверх списка */
+  update(id: string, patch: ItemPatch, opts?: { touch?: boolean }): Promise<Item>;
   /** Заменить изображение (например, после повторной обрезки) */
   replaceImage(id: string, image: ItemImage): Promise<Item>;
   delete(id: string): Promise<void>;
   subscribe(listener: () => void): Unsubscribe;
 }
 
+export type ItemPatch = Partial<ItemDraft & Pick<Item, "shape" | "bodyFit">>;
+
 export interface ItemImage {
   image: Blob;
   thumb: Blob;
   width: number;
   height: number;
+  /** Силуэт для автоматической посадки на манекен */
+  shape?: ItemShape;
+  /** Положение на теле (только для вещей, вырезанных из фото образа) */
+  bodyFit?: BodyFit;
 }
 
 export interface OutfitRepository {

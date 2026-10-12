@@ -1,4 +1,5 @@
 import { blobToImage, canvasToBlob, createCanvas, fitSize } from "./canvas";
+import { measureShape } from "./shape";
 
 export const MAX_SIDE = 1500;
 export const THUMB_SIDE = 400;
@@ -91,20 +92,20 @@ export async function cropAndRotate(src: Blob, crop: CropArea, rotation: number)
   return canvasToBlob(out.canvas, "image/png");
 }
 
-/** Готовит финальные файлы вещи: PNG (≤ MAX_SIDE) + миниатюра WebP/PNG с прозрачностью. */
+/** Готовит финальные файлы вещи: PNG (≤ MAX_SIDE), миниатюра WebP/PNG с прозрачностью и силуэт. */
 export async function buildItemImages(png: Blob) {
   const img = await blobToImage(png);
   const full = fitSize(img.naturalWidth, img.naturalHeight, MAX_SIDE);
-  let image = png;
-  if (full.width !== img.naturalWidth) {
-    const c = createCanvas(full.width, full.height);
-    c.ctx.drawImage(img, 0, 0, full.width, full.height);
-    image = await canvasToBlob(c.canvas, "image/png");
-  }
+  const c = createCanvas(full.width, full.height);
+  c.ctx.drawImage(img, 0, 0, full.width, full.height);
+  const image = full.width !== img.naturalWidth ? await canvasToBlob(c.canvas, "image/png") : png;
+  // Силуэт для автоматической посадки на манекен
+  const alpha = c.ctx.getImageData(0, 0, full.width, full.height).data;
+  const shape = measureShape((i) => alpha[i * 4 + 3], full.width, full.height);
   const t = fitSize(img.naturalWidth, img.naturalHeight, THUMB_SIDE);
   const tc = createCanvas(t.width, t.height);
   tc.ctx.drawImage(img, 0, 0, t.width, t.height);
   // Safari не умеет кодировать WebP и вернёт PNG — это нормально
   const thumb = await canvasToBlob(tc.canvas, "image/webp", 0.85);
-  return { image, thumb, width: full.width, height: full.height };
+  return { image, thumb, width: full.width, height: full.height, shape };
 }
