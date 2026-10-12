@@ -30,7 +30,7 @@ const OutfitCanvas = dynamic(() => import("@/components/mannequin/OutfitCanvas")
   loading: () => <div className="size-full animate-pulse rounded-3xl bg-line/40" />,
 });
 
-const PREVIEW_HEIGHT = 480;
+const PREVIEW_HEIGHT = 720;
 const EXPORT_HEIGHT = 1800;
 
 export function OutfitEditor() {
