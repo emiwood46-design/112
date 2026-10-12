@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #f6f3ee;
+  --color-surface: #ffffff;
+  --color-ink: #26221e;
+  --color-muted: #8a827a;
+  --color-line: #e7e1d8;
+  --color-accent: #b4532a;
+  --color-accent-soft: #f6e3d8;
+  --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+/* Шахматка под прозрачными PNG */
+.checker {
+  background-color: #fff;
+  background-image:
+    linear-gradient(45deg, #f0ece6 25%, transparent 25%),
+    linear-gradient(-45deg, #f0ece6 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #f0ece6 75%),
+    linear-gradient(-45deg, transparent 75%, #f0ece6 75%);
+  background-size: 16px 16px;
+  background-position:
+    0 0,
+    0 8px,
+    8px -8px,
+    -8px 0;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+}
+@utility btn-primary {
+  @apply btn bg-ink text-white hover:bg-black;
+}
+@utility btn-accent {
+  @apply btn bg-accent text-white hover:brightness-110;
+}
+@utility btn-ghost {
+  @apply btn border border-line bg-surface text-ink hover:bg-bg;
+}
+@utility btn-danger {
+  @apply btn border border-red-200 bg-white text-red-700 hover:bg-red-50;
+}
+@utility input {
+  @apply w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-base outline-none focus:border-ink;
+}
+@utility label {
+  @apply mb-1.5 block text-xs font-semibold tracking-wide text-muted uppercase;
+}
+@utility card {
+  @apply rounded-2xl border border-line bg-surface;
+}
