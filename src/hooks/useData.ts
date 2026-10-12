@@ -76,3 +76,12 @@ export function useBlobUrl(id: string | undefined): string | undefined {
   }, [id]);
   return state && state.id === id ? state.url : undefined;
 }
+
+export function useOutfit(id: string | null | undefined) {
+  return useRepoQuery<Outfit | undefined>(
+    () => (id ? getRepositories().outfits.get(id) : Promise.resolve(undefined)),
+    // Редактор не должен перезагружать образ при каждом сохранении
+    () => () => {},
+    "outfit:" + id,
+  );
+}
