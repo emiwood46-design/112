@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>Кто тут хороший пёс</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Manrope:wght@500;700&family=Unbounded:wght@500;700&display=swap">
+<style>
+/* Layout: one postcard centred on a dark forest ground, command buttons beneath it. Single deliberate theme: printed paper card. */
+:root {
+  --ground: #232c26;      /* page: forest at dusk */
+  --paper: #f6efe1;       /* card border, cream paper */
+  --ink: #1f1d1b;         /* text on paper */
+  --mist: #c9c2b2;        /* soft text on ground */
+  --red: #d4482b;         /* the toy's red, used as accent */
+  --amber: #e2a43b;       /* autumn leaf */
+  --font-display: "Unbounded", "Trebuchet MS", system-ui, sans-serif;
+  --font-body: "Manrope", "Segoe UI", system-ui, sans-serif;
+  --font-hand: "Caveat", "Comic Sans MS", cursive;
+  color-scheme: dark;
+}
+html, body { background: var(--ground); color: var(--mist); }
+body {
+  font-family: var(--font-body);
+  padding-inline: 16px;
+  padding-block: 28px 40px;
+  display: flex;
+  justify-content: center;
+}
+.wrap { width: 100%; max-width: 520px; display: flex; flex-direction: column; gap: 22px; align-items: stretch; }
+
+.card {
+  background: var(--paper);
+  padding: 14px 14px 0;
+  border-radius: 6px;
+  box-shadow: 0 30px 60px -20px rgba(0,0,0,.6), 0 2px 0 rgba(255,255,255,.08) inset;
+  transform: rotate(-1deg);
+}
+.scene { position: relative; width: 100%; max-width: 100%; aspect-ratio: 3 / 4; overflow: hidden; border-radius: 2px; background: #eee5d2; }
+.scene svg, .scene canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.scene canvas { pointer-events: none; }
+.caption {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap;
+  padding: 10px 6px 14px;
+  color: var(--ink);
+  font-family: var(--font-hand);
+}
+.caption .msg { font-size: clamp(24px, 6vw, 32px); font-weight: 700; line-height: 1.05; }
+.caption .count { font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.caption .count b { color: var(--red); font-weight: 700; }
+
+.controls { display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.hint { font-size: 13px; letter-spacing: .02em; text-align: center; margin: 0; max-width: 46ch; }
+.buttons { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; width: 100%; }
+.buttons button {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(13px, 3.6vw, 16px);
+  padding: 14px 8px;
+  border-radius: 999px;
+  border: 2px solid var(--paper);
+  background: transparent;
+  color: var(--paper);
+  cursor: pointer;
+  transition: background .2s, color .2s, transform .15s, opacity .2s;
+}
+.buttons button:hover:not(:disabled) { background: var(--paper); color: var(--ink); }
+.buttons button:active:not(:disabled) { transform: scale(.96); }
+.buttons button:focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+.buttons button.on { background: var(--red); border-color: var(--red); color: var(--paper); }
+.buttons button:disabled:not(.on) { opacity: .4; cursor: default; }
+.buttons kbd { display: block; font-family: var(--font-body); font-size: 11px; font-weight: 500; opacity: .6; margin-top: 3px; }
+
+/* ---------- scene parts ---------- */
+#dog, #head, .pose, #arm, #manHead, .bubble, #treat { transition-timing-function: cubic-bezier(.3,1.3,.5,1); }
+.pose { opacity: 0; transition: opacity .25s; }
+#dog[data-pose="stand"] .pose.stand,
+#dog[data-pose="sit"] .pose.sit,
+#dog[data-pose="lie"] .pose.lie { opacity: 1; }
+
+#head { transform: translate(205px, 598px); transition: transform .4s; }
+#dog[data-pose="sit"] #head { transform: translate(203px, 584px); }
+#dog[data-pose="lie"] #head { transform: translate(205px, 668px) rotate(-6deg); }
+#dog.bark #head { transform: translate(203px, 594px) rotate(-10deg); }
+
+.mouth-open { opacity: 0; }
+#dog.bark .mouth-open { opacity: 1; }
+#dog.bark .mouth-closed { opacity: 0; }
+
+.tail { transform-box: fill-box; transform-origin: 90% 90%; animation: wag 1.4s ease-in-out infinite; }
+#dog.joy .tail { animation-duration: .22s; }
+@keyframes wag { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(10deg); } }
+
+#dogHop { transform-box: view-box; }
+#dog.joy #dogHop { animation: hop .5s ease-out 3; }
+@keyframes hop { 0%,100% { transform: translateY(0); } 40% { transform: translateY(-22px); } 70% { transform: translateY(2px); } }
+#dog.pet #dogHop { animation: wiggle .5s ease-in-out 2; }
+@keyframes wiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-3deg); } 75% { transform: rotate(3deg); } }
+#dogHop { transform-origin: 200px 740px; }
+#dog { cursor: pointer; }
+
+#arm { transform-origin: 400px 215px; transition: transform .25s; }
+#man.throw #arm { transform: rotate(62deg); transition-duration: .18s; }
+#manHead { transform-origin: 395px 160px; transition: transform .4s; }
+#man.look #manHead { transform: rotate(-12deg); }
+
+.bubble { opacity: 0; transform: translateY(8px) scale(.9); transform-box: fill-box; transform-origin: 80% 100%; transition: opacity .2s, transform .3s; }
+.bubble.show { opacity: 1; transform: none; }
+.bubble text { font-family: var(--font-display); font-weight: 700; }
+#dogBubble { transform-origin: 30% 100%; }
+
+#treat { opacity: 0; }
+.heart { animation: rise 1.4s ease-out forwards; transform-box: fill-box; transform-origin: center; }
+@keyframes rise { 0% { opacity: 0; transform: translateY(0) scale(.4); } 20% { opacity: 1; transform: translateY(-14px) scale(1.1); } 100% { opacity: 0; transform: translateY(-90px) scale(.8); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .tail { animation: none; }
+  #dog.joy #dogHop, #dog.pet #dogHop { animation: none; }
+  .card { transform: none; }
+}
+</style>
+
+<div class="wrap">
+  <div class="card">
+    <div class="scene" id="scene">
+      <svg viewBox="0 0 600 800" role="img" aria-label="Осенний лес. Человек в чёрном худи с игрушкой в руке и кудрявая чёрно-белая собачка на тропинке." id="svg">
+        <defs>
+          <filter id="grain" x="0" y="0" width="100%" height="100%">
+            <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/>
+            <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 0"/>
+          </filter>
+          <g id="curl"><circle r="10"/></g>
+          <path id="heartShape" d="M0 6 C -14 -6, -8 -18, 0 -9 C 8 -18, 14 -6, 0 6 Z"/>
+        </defs>
+
+        <!-- sky -->
+        <rect width="600" height="800" fill="#eee5d2"/>
+
+        <!-- far trees -->
+        <rect x="262" y="0" width="16" height="560" fill="#8c8580"/>
+        <rect x="480" y="0" width="14" height="560" fill="#8a837d"/>
+        <rect x="318" y="0" width="26" height="520" fill="#6d6762"/>
+
+        <!-- far bushes -->
+        <path d="M150 560 A90 110 0 0 1 330 560 Z" fill="#8f9b5a"/>
+        <path d="M220 470 A60 70 0 0 1 340 470 L340 560 L220 560 Z" fill="#6f8650"/>
+        <path d="M110 300 A80 70 0 0 1 270 300 L270 560 L110 560 Z" fill="#7e9156"/>
+        <path d="M420 560 A110 120 0 0 1 640 560 Z" fill="#6b8250"/>
+        <path d="M500 430 A70 70 0 0 1 640 430 L640 560 L500 560 Z" fill="#879a5c"/>
+
+        <!-- near trees -->
+        <rect x="40" y="0" width="92" height="700" fill="#2a2725"/>
+        <rect x="132" y="80" width="14" height="40" fill="#2a2725" transform="rotate(-35 132 80)"/>
+        <rect x="205" y="0" width="32" height="600" fill="#45403d"/>
+        <rect x="520" y="0" width="44" height="620" fill="#3b3633"/>
+        <rect x="560" y="0" width="22" height="600" fill="#57514d"/>
+
+        <!-- mid bushes -->
+        <path d="M120 600 A100 110 0 0 1 320 600 Z" fill="#4f6a42"/>
+        <path d="M150 560 A80 70 0 0 1 300 560 L300 600 L150 600 Z" fill="#3c5a3e"/>
+        <path d="M470 640 A90 110 0 0 1 650 640 Z" fill="#3e5d3c"/>
+
+        <!-- ground -->
+        <path d="M0 620 C 150 560, 420 560, 600 600 L600 800 L0 800 Z" fill="#d7b388"/>
+        <path d="M70 700 C 200 640, 420 650, 600 680 L600 800 L40 800 Z" fill="#cfa77a" opacity=".55"/>
+        <ellipse cx="205" cy="742" rx="70" ry="10" fill="#a9825c" opacity=".55"/>
+        <ellipse cx="415" cy="752" rx="85" ry="10" fill="#a9825c" opacity=".55"/>
+
+        <!-- ground leaves -->
+        <g fill="#c8553a">
+          <path d="M110 780 l18 -6 l10 8 l-18 6 Z"/><path d="M300 700 l16 -5 l9 7 l-16 5 Z"/>
+          <path d="M520 720 l18 -6 l10 8 l-18 6 Z"/><path d="M470 780 l14 -5 l8 6 l-14 5 Z"/>
+        </g>
+        <g fill="#e2a43b">
+          <path d="M260 760 l18 -6 l10 8 l-18 6 Z"/><path d="M560 760 l14 -5 l8 6 l-14 5 Z"/>
+          <path d="M340 640 l14 -5 l8 6 l-14 5 Z"/>
+        </g>
+
+        <!-- ===== MAN ===== -->
+        <g id="man">
+          <!-- legs -->
+          <path d="M398 450 L462 450 L452 735 L410 735 Z" fill="#5b5d62"/>
+          <path d="M350 450 L412 450 L402 752 L356 752 Z" fill="#6f7176"/>
+          <!-- shoes -->
+          <path d="M406 722 h48 q10 0 14 14 v6 h-70 q-6 -18 8 -20 Z" fill="#2a2622"/>
+          <rect x="398" y="738" width="72" height="8" rx="4" fill="#e9e1d2"/>
+          <path d="M352 740 h50 q12 0 16 14 v6 h-74 q-4 -18 8 -20 Z" fill="#2a2622"/>
+          <rect x="342" y="756" width="78" height="9" rx="4.5" fill="#e9e1d2"/>
+
+          <!-- hood behind -->
+          <path d="M408 150 C 450 150, 480 180, 482 240 L 440 250 Z" fill="#141416"/>
+          <!-- hoodie body -->
+          <path d="M372 188 L 440 182 L 478 214 L 506 448 L 296 438 L 334 250 Z" fill="#1e1e21"/>
+          <path d="M440 182 L 478 214 L 506 448 L 452 446 L 436 260 Z" fill="#2c2c30"/>
+          <path d="M296 438 L 334 250 L 360 300 L 330 440 Z" fill="#141416"/>
+
+          <!-- head -->
+          <g id="manHead">
+            <rect x="382" y="148" width="28" height="46" fill="#d98f66"/>
+            <path d="M372 188 Q 395 205 418 186 L 410 180 L 384 184 Z" fill="#141416"/>
+            <ellipse cx="398" cy="112" rx="31" ry="38" fill="#e7a67c"/>
+            <path d="M370 106 L 357 128 L 372 132 Z" fill="#e7a67c"/>
+            <path d="M367 80 Q 390 60 420 76 Q 434 92 428 124 L 414 124 Q 410 98 398 92 Q 380 90 368 96 Z" fill="#3b2a22"/>
+            <ellipse cx="414" cy="118" rx="6" ry="9" fill="#d98f66"/>
+            <path d="M372 108 h9" stroke="#2b1d16" stroke-width="3" stroke-linecap="round"/>
+          </g>
+
+          <!-- arm with toy -->
+          <g id="arm">
+            <path d="M384 212 L 420 210 L 426 432 L 394 436 Z" fill="#3a3a3f"/>
+            <path d="M406 212 L 420 210 L 426 432 L 410 434 Z" fill="#2c2c30"/>
+            <g>
+              <path d="M398 470 q 30 50 66 26 l -6 -34 Z" fill="#d4482b"/>
+              <circle cx="430" cy="480" r="26" fill="#d4482b"/>
+              <g fill="#6c7838">
+                <circle cx="425" cy="470" r="15"/><circle cx="443" cy="482" r="15"/><circle cx="430" cy="494" r="14"/>
+                <circle cx="412" cy="486" r="12"/><circle cx="447" cy="462" r="11"/>
+              </g>
+              <circle cx="447" cy="482" r="5" fill="#f1ece0"/><circle cx="448" cy="482" r="2.4" fill="#1b1b1b"/>
+            </g>
+            <ellipse cx="410" cy="450" rx="14" ry="18" fill="#e7a67c"/>
+            <path d="M398 446 q 12 -6 24 0" stroke="#c9845e" stroke-width="2" fill="none"/>
+          </g>
+        </g>
+
+        <!-- ===== DOG ===== -->
+        <g id="dog" data-pose="stand" tabindex="-1">
+          <g id="dogHop">
+            <!-- STAND -->
+            <g class="pose stand">
+              <g class="tail" fill="#efe9de">
+                <circle cx="140" cy="612" r="16"/><circle cx="128" cy="628" r="14"/><circle cx="152" cy="628" r="13"/><circle cx="138" cy="644" r="12"/>
+              </g>
+              <ellipse cx="195" cy="668" rx="58" ry="44" fill="#ece5d8"/>
+              <ellipse cx="190" cy="646" rx="50" ry="26" fill="#45423f"/>
+              <rect x="150" y="680" width="22" height="56" rx="10" fill="#e3dccd"/>
+              <rect x="222" y="680" width="22" height="56" rx="10" fill="#e3dccd"/>
+              <circle cx="202" cy="680" r="34" fill="#f2ece2"/>
+              <rect x="178" y="690" width="22" height="50" rx="10" fill="#f2ece2"/>
+              <rect x="206" y="690" width="22" height="50" rx="10" fill="#f2ece2"/>
+              <ellipse cx="189" cy="740" rx="13" ry="6" fill="#f7f2ea"/>
+              <ellipse cx="217" cy="740" rx="13" ry="6" fill="#f7f2ea"/>
+            </g>
+            <!-- SIT -->
+            <g class="pose sit">
+              <g class="tail" fill="#efe9de">
+                <circle cx="128" cy="726" r="13"/><circle cx="114" cy="734" r="11"/><circle cx="140" cy="738" r="11"/>
+              </g>
+              <ellipse cx="200" cy="726" rx="62" ry="18" fill="#e3dccd"/>
+              <ellipse cx="200" cy="682" rx="50" ry="52" fill="#ece5d8"/>
+              <path d="M152 670 Q 200 620 248 670 Q 230 650 200 648 Q 170 650 152 670 Z" fill="#45423f"/>
+              <ellipse cx="160" cy="712" rx="22" ry="22" fill="#e3dccd"/>
+              <ellipse cx="240" cy="712" rx="22" ry="22" fill="#e3dccd"/>
+              <circle cx="201" cy="676" r="32" fill="#f2ece2"/>
+              <rect x="180" y="688" width="20" height="52" rx="9" fill="#f2ece2"/>
+              <rect x="204" y="688" width="20" height="52" rx="9" fill="#f2ece2"/>
+              <ellipse cx="190" cy="740" rx="12" ry="6" fill="#f7f2ea"/>
+              <ellipse cx="214" cy="740" rx="12" ry="6" fill="#f7f2ea"/>
+            </g>
+            <!-- LIE -->
+            <g class="pose lie">
+              <g class="tail" fill="#efe9de">
+                <circle cx="112" cy="712" r="14"/><circle cx="98" cy="722" r="12"/><circle cx="118" cy="728" r="11"/>
+              </g>
+              <ellipse cx="195" cy="716" rx="82" ry="28" fill="#ece5d8"/>
+              <ellipse cx="190" cy="700" rx="62" ry="14" fill="#45423f"/>
+              <ellipse cx="205" cy="716" rx="40" ry="24" fill="#f2ece2"/>
+              <ellipse cx="178" cy="738" rx="22" ry="9" fill="#f7f2ea"/>
+              <ellipse cx="232" cy="738" rx="22" ry="9" fill="#f7f2ea"/>
+            </g>
+
+            <!-- HEAD (shared, moves between poses) -->
+            <g id="head">
+              <g fill="#2f2d2c">
+                <ellipse cx="-38" cy="12" rx="15" ry="22"/><ellipse cx="38" cy="12" rx="15" ry="22"/>
+                <circle cx="-40" cy="30" r="11"/><circle cx="40" cy="30" r="11"/>
+              </g>
+              <circle r="34" fill="#3a3836"/>
+              <g fill="#2f2d2c">
+                <circle cx="-24" cy="-26" r="13"/><circle cx="-4" cy="-34" r="14"/><circle cx="18" cy="-30" r="13"/>
+                <circle cx="31" cy="-14" r="10"/><circle cx="-32" cy="-8" r="10"/>
+              </g>
+              <g fill="#4d4a47">
+                <circle cx="-12" cy="-22" r="6"/><circle cx="10" cy="-20" r="6"/><circle cx="-24" cy="-4" r="5"/><circle cx="24" cy="-4" r="5"/>
+              </g>
+              <ellipse cx="0" cy="13" rx="19" ry="15" fill="#cfc8bb"/>
+              <path d="M-20 -1 q6 -8 12 0 M8 -1 q6 -8 12 0" stroke="#121212" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <ellipse cx="0" cy="7" rx="6.5" ry="4.8" fill="#151515"/>
+              <g class="mouth-closed">
+                <ellipse cx="0" cy="23" rx="5" ry="7" fill="#e9748a"/>
+                <path d="M-8 15 q8 7 16 0" stroke="#151515" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+              </g>
+              <g class="mouth-open">
+                <ellipse cx="0" cy="20" rx="9" ry="8" fill="#2a1416"/>
+                <ellipse cx="0" cy="24" rx="5" ry="3.5" fill="#e9748a"/>
+              </g>
+            </g>
+          </g>
+        </g>
+
+        <!-- treat -->
+        <g id="treat">
+          <g fill="#b9763b">
+            <rect x="-10" y="-3.5" width="20" height="7" rx="3"/>
+            <circle cx="-10" cy="-4" r="4.5"/><circle cx="-10" cy="4" r="4.5"/>
+            <circle cx="10" cy="-4" r="4.5"/><circle cx="10" cy="4" r="4.5"/>
+          </g>
+        </g>
+
+        <g id="hearts"></g>
+
+        <!-- speech bubbles -->
+        <g id="manBubble" class="bubble">
+          <path d="M210 40 h140 a14 14 0 0 1 14 14 v36 a14 14 0 0 1 -14 14 h-8 l14 18 l-30 -18 h-116 a14 14 0 0 1 -14 -14 v-36 a14 14 0 0 1 14 -14 Z" fill="#f6efe1" stroke="#1f1d1b" stroke-width="2.5"/>
+          <text id="manText" x="280" y="80" text-anchor="middle" font-size="24" fill="#1f1d1b">Сидеть!</text>
+        </g>
+        <g id="dogBubble" class="bubble">
+          <path d="M228 500 h92 a14 14 0 0 1 14 14 v30 a14 14 0 0 1 -14 14 h-62 l-26 22 l6 -22 h-10 a14 14 0 0 1 -14 -14 v-30 a14 14 0 0 1 14 -14 Z" fill="#f6efe1" stroke="#1f1d1b" stroke-width="2.5"/>
+          <text x="274" y="537" text-anchor="middle" font-size="22" fill="#d4482b">Гав!</text>
+        </g>
+
+        <rect width="600" height="800" filter="url(#grain)" opacity=".22" style="mix-blend-mode:multiply" pointer-events="none"/>
+      </svg>
+      <canvas id="leaves"></canvas>
+    </div>
+    <div class="caption">
+      <span class="msg" id="msg">Кто тут хороший пёс?</span>
+      <span class="count">вкусняшек: <b id="count">0</b></span>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="buttons" role="group" aria-label="Команды">
+      <button type="button" id="btn-sit" data-cmd="sit">Сидеть<kbd>1</kbd></button>
+      <button type="button" id="btn-lie" data-cmd="lie">Лежать<kbd>2</kbd></button>
+      <button type="button" id="btn-voice" data-cmd="voice">Голос<kbd>3</kbd></button>
+    </div>
+    <p class="hint">Дайте команду: собачка выполнит её и получит вкусняшку. Собачку можно погладить, нажав на неё.</p>
+  </div>
+</div>
+
+<script>
+(() => {
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.getElementById("svg");
+  const dog = document.getElementById("dog");
+  const man = document.getElementById("man");
+  const treat = document.getElementById("treat");
+  const hearts = document.getElementById("hearts");
+  const manBubble = document.getElementById("manBubble");
+  const manText = document.getElementById("manText");
+  const dogBubble = document.getElementById("dogBubble");
+  const countEl = document.getElementById("count");
+  const msgEl = document.getElementById("msg");
+  const buttons = [...document.querySelectorAll(".buttons button")];
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const COMMANDS = {
+    sit:   { say: "Сидеть!", pose: "sit",   mouth: [203, 598] },
+    lie:   { say: "Лежать!", pose: "lie",   mouth: [205, 682] },
+    voice: { say: "Голос!",  pose: "stand", mouth: [203, 612] },
+  };
+  const PRAISE = ["Умница!", "Хороший мальчик!", "Вот это да!", "Молодец!", "Самый лучший пёс!", "Ням-ням!"];
+
+  let busy = false, count = 0;
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+
+  function addHearts(x, y, n = 5) {
+    for (let i = 0; i < n; i++) {
+      const g = document.createElementNS(NS, "g");
+      g.setAttribute("transform", `translate(${x + (Math.random() * 70 - 35)} ${y + (Math.random() * 20 - 10)})`);
+      const u = document.createElementNS(NS, "use");
+      u.setAttribute("href", "#heartShape");
+      u.setAttribute("fill", i % 2 ? "#d4482b" : "#e9748a");
+      u.setAttribute("class", "heart");
+      u.style.animationDelay = (i * 0.12) + "s";
+      u.style.opacity = 0;
+      g.appendChild(u);
+      hearts.appendChild(g);
+      setTimeout(() => g.remove(), 1400 + i * 120 + 100);
+    }
+  }
+
+  function throwTreat(to) {
+    // hand position when the arm is swung forward 62° around the shoulder
+    const a = 62 * Math.PI / 180, sx = 400, sy = 215, hx = 410 - sx, hy = 450 - sy;
+    const from = [sx + hx * Math.cos(a) - hy * Math.sin(a), sy + hx * Math.sin(a) + hy * Math.cos(a)];
+    const dur = reduce ? 1 : 720, peak = 140;
+    return new Promise(res => {
+      treat.style.opacity = 1;
+      const t0 = performance.now();
+      (function step(now) {
+        const t = Math.min(1, (now - t0) / dur);
+        const x = from[0] + (to[0] - from[0]) * t;
+        const y = from[1] + (to[1] - from[1]) * t - peak * 4 * t * (1 - t);
+        treat.setAttribute("transform", `translate(${x} ${y}) rotate(${t * 540})`);
+        if (t < 1) requestAnimationFrame(step); else { treat.style.opacity = 0; res(); }
+      })(t0);
+    });
+  }
+
+  async function run(cmd) {
+    if (busy) return;
+    busy = true;
+    const c = COMMANDS[cmd];
+    buttons.forEach(b => { b.disabled = true; b.classList.toggle("on", b.dataset.cmd === cmd); });
+
+    manText.textContent = c.say;
+    manBubble.classList.add("show");
+    man.classList.add("look");
+    dog.classList.remove("joy", "bark", "pet");
+    await wait(650);
+
+    dog.dataset.pose = c.pose;
+    if (cmd === "voice") { dog.classList.add("bark"); dogBubble.classList.add("show"); }
+    await wait(700);
+
+    manBubble.classList.remove("show");
+    man.classList.add("throw");
+    await wait(160);
+    const flight = throwTreat(c.mouth);
+    await wait(200);
+    man.classList.remove("throw");
+    await flight;
+
+    dogBubble.classList.remove("show");
+    dog.classList.remove("bark");
+    dog.classList.add("joy");
+    addHearts(c.mouth[0], c.mouth[1] - 50, 6);
+    count++;
+    countEl.textContent = count;
+    msgEl.textContent = PRAISE[(count - 1) % PRAISE.length];
+    await wait(1600);
+
+    dog.classList.remove("joy");
+    man.classList.remove("look");
+    await wait(500);
+    dog.dataset.pose = "stand";
+    buttons.forEach(b => { b.disabled = false; b.classList.remove("on"); });
+    busy = false;
+  }
+
+  buttons.forEach(b => b.addEventListener("click", () => run(b.dataset.cmd)));
+  addEventListener("keydown", e => {
+    const map = { "1": "sit", "2": "lie", "3": "voice" };
+    if (map[e.key]) run(map[e.key]);
+  });
+  dog.addEventListener("click", () => {
+    if (busy) return;
+    dog.classList.remove("pet"); void dog.getBBox(); dog.classList.add("pet");
+    const m = COMMANDS.voice.mouth;
+    addHearts(m[0], m[1] - 60, 3);
+    setTimeout(() => dog.classList.remove("pet"), 1000);
+  });
+
+  // falling leaves
+  const cv = document.getElementById("leaves"), ctx = cv.getContext("2d");
+  const COLORS = ["#d4482b", "#e2a43b", "#c8783a", "#6f8650"];
+  let W = 0, H = 0, leaves = [];
+  function size() {
+    const r = cv.getBoundingClientRect(), d = Math.min(devicePixelRatio || 1, 2);
+    W = r.width; H = r.height; cv.width = W * d; cv.height = H * d; ctx.setTransform(d, 0, 0, d, 0, 0);
+  }
+  function makeLeaf(y) {
+    return { x: Math.random() * W, y: y ?? -20, s: 6 + Math.random() * 8, vy: .35 + Math.random() * .5,
+             ph: Math.random() * 6.28, rot: Math.random() * 6.28, vr: (Math.random() - .5) * .03,
+             c: COLORS[Math.floor(Math.random() * COLORS.length)] };
+  }
+  function draw(l) {
+    ctx.save(); ctx.translate(l.x, l.y); ctx.rotate(l.rot);
+    ctx.fillStyle = l.c; ctx.beginPath();
+    ctx.moveTo(-l.s * 1.4, 0); ctx.lineTo(0, -l.s * .55); ctx.lineTo(l.s * 1.4, 0); ctx.lineTo(0, l.s * .55);
+    ctx.closePath(); ctx.fill(); ctx.restore();
+  }
+  function tick(t) {
+    ctx.clearRect(0, 0, W, H);
+    for (const l of leaves) {
+      l.y += l.vy; l.x += Math.sin(t / 900 + l.ph) * .6; l.rot += l.vr;
+      if (l.y > H + 20) Object.assign(l, makeLeaf());
+      draw(l);
+    }
+    requestAnimationFrame(tick);
+  }
+  size();
+  leaves = Array.from({ length: 11 }, () => makeLeaf(Math.random() * H));
+  addEventListener("resize", size);
+  if (reduce) leaves.forEach(draw); else requestAnimationFrame(tick);
+})();
+</script>
+
+</body>
+</html>
