@@ -9,10 +9,14 @@ export function ItemCard({ item }: { item: Item }) {
   return (
     <Link
       href={`/wardrobe/item?id=${item.id}`}
-      className="group card flex flex-col overflow-hidden transition hover:shadow-md"
+      className="group card flex flex-col self-start overflow-hidden transition hover:shadow-md"
     >
-      <div className="aspect-square bg-[#faf8f5] p-3">
-        <BlobImage id={item.thumbId} alt={item.name} className="size-full object-contain transition group-hover:scale-[1.03]" />
+      <div className="relative aspect-square bg-[#faf8f5]">
+        <BlobImage
+          id={item.thumbId}
+          alt={item.name}
+          className="absolute inset-0 size-full object-contain p-3 transition group-hover:scale-[1.03]"
+        />
       </div>
       <div className="flex items-center gap-2 border-t border-line px-3 py-2">
         <span
