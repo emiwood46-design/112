@@ -84,7 +84,7 @@ export default function OutfitCanvas({
   }));
 
   // Пинч двумя пальцами: масштаб и поворот выбранной вещи
-  const pinch = useRef<{ dist: number; angle: number; scale: number; rotation: number } | null>(null);
+  const pinch = useRef<{ dist: number; angle: number; sx: number; sy: number; rotation: number } | null>(null);
   const touchInfo = (t: TouchList) => {
     const [a, b] = [t[0], t[1]];
     return {
@@ -100,11 +100,12 @@ export default function OutfitCanvas({
     node.stopDrag();
     const info = touchInfo(t);
     if (!pinch.current) {
-      pinch.current = { ...info, scale: node.scaleX(), rotation: node.rotation() };
+      pinch.current = { ...info, sx: node.scaleX(), sy: node.scaleY(), rotation: node.rotation() };
       return;
     }
-    const s = Math.max(0.02, pinch.current.scale * (info.dist / pinch.current.dist));
-    node.scale({ x: s, y: s });
+    // Пропорцию X/Y сохраняем (у брюк, вытянутых до щиколоток, она не 1:1)
+    const k = Math.max(0.02 / pinch.current.sx, info.dist / pinch.current.dist);
+    node.scale({ x: pinch.current.sx * k, y: pinch.current.sy * k });
     node.rotation(pinch.current.rotation + info.angle - pinch.current.angle);
     node.getLayer()?.batchDraw();
   };
@@ -122,6 +123,7 @@ export default function OutfitCanvas({
       x: node.x(),
       y: node.y(),
       scale: node.scaleX(),
+      scaleY: node.scaleY(),
       rotation: node.rotation(),
     });
 
@@ -249,7 +251,7 @@ function LayerImage({
       x={layer.x}
       y={layer.y}
       scaleX={layer.scale}
-      scaleY={layer.scale}
+      scaleY={layer.scaleY ?? layer.scale}
       rotation={layer.rotation}
       draggable
       onMouseDown={onSelect}

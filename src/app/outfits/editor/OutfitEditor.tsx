@@ -143,13 +143,11 @@ function EditorBody({
     const idx = sortedLayers(layers)
       .filter((l) => l.slot === selected.slot)
       .findIndex((l) => l.id === selected.id);
-    updateSelected((l) => ({ ...l, ...defaultPlacement(selectedItem, l.slot, mannequin, Math.max(0, idx)) }));
+    updateSelected((l) => placeOnFigure(l, selectedItem, mannequin, Math.max(0, idx)));
   };
 
-  const switchMannequin = (kind: MannequinKind) => {
-    if (kind === mannequin) return;
-    setMannequin(kind);
-    // Анатомия отличается — раскладываем вещи по слотам нового манекена
+  /** Заново посадить все вещи по фигуре манекена kind */
+  const fitAll = (kind: MannequinKind) => {
     const counters = new Map<string, number>();
     change(
       sortedLayers(layers).map((l) => {
@@ -157,9 +155,16 @@ function EditorBody({
         if (!item) return l;
         const n = counters.get(l.slot) ?? 0;
         counters.set(l.slot, n + 1);
-        return { ...l, ...defaultPlacement(item, l.slot, kind, n) };
+        return placeOnFigure(l, item, kind, n);
       }),
     );
+  };
+
+  const switchMannequin = (kind: MannequinKind) => {
+    if (kind === mannequin) return;
+    setMannequin(kind);
+    // Анатомия отличается — сажаем вещи по фигуре нового манекена
+    fitAll(kind);
   };
 
   const randomize = (s: Season) => {
@@ -290,11 +295,11 @@ function EditorBody({
                 </span>
                 <ToolBtn label="Слой выше" onClick={() => change(moveLayer(layers, selected.id, 1))}>⬆︎</ToolBtn>
                 <ToolBtn label="Слой ниже" onClick={() => change(moveLayer(layers, selected.id, -1))}>⬇︎</ToolBtn>
-                <ToolBtn label="Уменьшить" onClick={() => updateSelected((l) => ({ ...l, scale: l.scale * 0.9 }))}>−</ToolBtn>
-                <ToolBtn label="Увеличить" onClick={() => updateSelected((l) => ({ ...l, scale: l.scale * 1.1 }))}>+</ToolBtn>
+                <ToolBtn label="Уменьшить" onClick={() => updateSelected((l) => scaleLayer(l, 0.9))}>−</ToolBtn>
+                <ToolBtn label="Увеличить" onClick={() => updateSelected((l) => scaleLayer(l, 1.1))}>+</ToolBtn>
                 <ToolBtn label="Повернуть влево" onClick={() => updateSelected((l) => ({ ...l, rotation: l.rotation - 15 }))}>⟲</ToolBtn>
                 <ToolBtn label="Повернуть вправо" onClick={() => updateSelected((l) => ({ ...l, rotation: l.rotation + 15 }))}>⟳</ToolBtn>
-                <ToolBtn label="Вернуть в слот" onClick={resetToSlot}>↺ слот</ToolBtn>
+                <ToolBtn label="Посадить по фигуре" onClick={resetToSlot}>↺ По фигуре</ToolBtn>
                 <ToolBtn
                   label="Снять"
                   onClick={() => {
@@ -306,11 +311,18 @@ function EditorBody({
                 </ToolBtn>
               </>
             ) : (
-              <span className="text-xs text-muted">
-                {visibleLayers.length
-                  ? "Нажмите на вещь, чтобы двигать, масштабировать (двумя пальцами) и менять слои"
-                  : "Выберите вещи ниже — они встанут на своё место"}
-              </span>
+              <>
+                {visibleLayers.length > 0 && (
+                  <ToolBtn label="Посадить все вещи по фигуре" onClick={() => fitAll(mannequin)}>
+                    ↺ Всё по фигуре
+                  </ToolBtn>
+                )}
+                <span className="ml-1 text-xs text-muted">
+                  {visibleLayers.length
+                    ? "Нажмите на вещь, чтобы двигать, масштабировать (двумя пальцами) и менять слои"
+                    : "Выберите вещи ниже — они сами сядут на фигуру"}
+                </span>
+              </>
             )}
           </div>
         </div>
@@ -361,6 +373,15 @@ function EditorBody({
       </Sheet>
     </div>
   );
+}
+
+/** Позиция «по фигуре» без остатков ручного масштаба по вертикали */
+function placeOnFigure(l: OutfitLayer, item: Item, kind: MannequinKind, indexInSlot: number): OutfitLayer {
+  return { ...l, scaleY: undefined, ...defaultPlacement(item, l.slot, kind, indexInSlot) };
+}
+
+function scaleLayer(l: OutfitLayer, k: number): OutfitLayer {
+  return { ...l, scale: l.scale * k, scaleY: l.scaleY === undefined ? undefined : l.scaleY * k };
 }
 
 function ToolBtn({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {

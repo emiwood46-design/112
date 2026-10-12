@@ -130,3 +130,40 @@ export function bbox(m: Uint8Array, w: number, h: number) {
       }
   return maxX < 0 ? null : { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
 }
+
+/**
+ * Заливает «дыры» внутри маски — пустые области, не касающиеся края изображения,
+ * площадью не больше maxArea (ошибки разметки посреди вещи).
+ */
+export function fillHoles(m: Uint8Array, w: number, h: number, maxArea: number) {
+  const inv = new Uint8Array(m.length);
+  for (let i = 0; i < m.length; i++) inv[i] = m[i] ? 0 : 1;
+  const seen = new Uint8Array(m.length);
+  const stack = new Int32Array(m.length);
+  const region: number[] = [];
+  const out = m.slice();
+  for (let start = 0; start < m.length; start++) {
+    if (!inv[start] || seen[start]) continue;
+    let sp = 0;
+    stack[sp++] = start;
+    seen[start] = 1;
+    region.length = 0;
+    let touchesBorder = false;
+    while (sp) {
+      const p = stack[--sp];
+      region.push(p);
+      const x = p % w;
+      const y = (p - x) / w;
+      if (x === 0 || y === 0 || x === w - 1 || y === h - 1) touchesBorder = true;
+      const neighbors = [x > 0 ? p - 1 : -1, x < w - 1 ? p + 1 : -1, y > 0 ? p - w : -1, y < h - 1 ? p + w : -1];
+      for (const q of neighbors) {
+        if (q >= 0 && inv[q] && !seen[q]) {
+          seen[q] = 1;
+          stack[sp++] = q;
+        }
+      }
+    }
+    if (!touchesBorder && region.length <= maxArea) for (const p of region) out[p] = 1;
+  }
+  return out;
+}
