@@ -177,7 +177,19 @@ export default function OutfitCanvas({
                   key={layer.id}
                   layer={layer}
                   item={item}
-                  registerNode={(n) => (n ? nodes.current.set(layer.id, n) : nodes.current.delete(layer.id))}
+                  registerNode={(n) => {
+                    if (!n) {
+                      nodes.current.delete(layer.id);
+                      return;
+                    }
+                    nodes.current.set(layer.id, n);
+                    // Картинка догрузилась после выбора — цепляем трансформер
+                    const tr = trRef.current;
+                    if (layer.id === selectedId && tr && tr.nodes()[0] !== n) {
+                      tr.nodes([n]);
+                      tr.getLayer()?.batchDraw();
+                    }
+                  }}
                   onSelect={() => onSelect(layer.id)}
                   onCommit={(node) => commit(layer, node)}
                 />

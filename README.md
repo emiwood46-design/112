@@ -1,36 +1,126 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Виртуальный гардероб
 
-## Getting Started
+Веб-приложение (PWA) для телефона и десктопа. Фотографируете вещь, приложение прямо в браузере вырезает её из фона и сохраняет в гардероб. Из вещей собираются образы на манекене.
 
-First, run the development server:
+Бэкенд не нужен: всё хранится локально в IndexedDB на устройстве.
+
+## Возможности
+
+- **Добавление вещи.** Камера или галерея → фото уменьшается до 1500 px → фон удаляется прямо на устройстве (`@imgly/background-removal`, в Web Worker). Есть ручная обрезка и поворот. Основной цвет определяется автоматически. Форма: категория, цвет, сезон, теги, название. Сохраняется PNG с прозрачностью и сжатая миниатюра.
+- **Гардероб.** Сетка вещей, фильтры по категории, цвету, сезону и тегам, поиск, редактирование и удаление.
+- **Конструктор образов.** Женский и мужской SVG-манекен. Вещь ставится в свой слот по тапу или перетаскиванием мышью. Её можно двигать, масштабировать и поворачивать (рамка трансформации или два пальца) и менять порядок слоёв. В каждом основном слоте одна вещь: платье заменяет верх и низ. Аксессуаров и сумок можно несколько. Кнопка «Случайный образ» учитывает сезон. Образ сохраняется и экспортируется в PNG через системное меню «Поделиться» или скачиванием.
+- **Мои образы.** Список с превью: открыть, дублировать, поделиться, удалить.
+- **PWA.** Устанавливается на главный экран и работает офлайн. Модель удаления фона кешируется после первой загрузки.
+- **Резервная копия.** Весь гардероб экспортируется в один `.zip` и импортируется обратно в режиме «объединить» или «заменить всё».
+
+## Запуск
+
+Нужен Node.js 20 или новее.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Production-сборка (service worker регистрируется только в ней):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build
+npm start
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Проверки: `npm run lint`, `npx tsc --noEmit`.
 
-## Learn More
+### Проверка с телефона
 
-To learn more about Next.js, take a look at the following resources:
+Камера, service worker и `crypto.randomUUID` работают только в **secure context**: по HTTPS или на `localhost`. Чтобы открыть приложение с телефона в локальной сети, есть два варианта:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `npx next dev --experimental-https -H 0.0.0.0` — Next выпустит самоподписанный сертификат, его нужно будет принять в браузере;
+- туннель (`cloudflared tunnel --url http://localhost:3000`, ngrok и т. п.);
+- либо сразу задеплоить на Vercel (см. ниже).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Модель удаления фона
 
-## Deploy on Vercel
+При первом удалении фона браузер загружает модель (~40 МБ для CPU, ~80 МБ для WebGPU) и WASM-файлы ONNX Runtime с CDN IMG.LY (`staticimgly.com`). Дальше файлы берутся из кеша. Пока идёт загрузка, интерфейс показывает прогресс.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Если нужно раздавать модель со своего домена или CDN, задайте переменную окружения:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+NEXT_PUBLIC_BG_REMOVAL_PUBLIC_PATH=https://cdn.example.com/bg-removal/   # со слешем в конце
+```
+
+По этому адресу должны лежать `resources.json` и файлы-чанки в формате пакета `@imgly/background-removal-data` той же версии, что и `@imgly/background-removal`.
+
+## Деплой на Vercel
+
+1. Запушьте репозиторий на GitHub.
+2. На [vercel.com/new](https://vercel.com/new) импортируйте репозиторий. Фреймворк (Next.js) определится сам, настройки сборки по умолчанию подходят.
+3. При необходимости добавьте переменные окружения (`NEXT_PUBLIC_BG_REMOVAL_PUBLIC_PATH`) в Project → Settings → Environment Variables.
+4. Deploy. Все страницы статические, серверные функции не используются.
+
+Vercel сразу выдаёт HTTPS, поэтому камера, установка на главный экран и офлайн-режим заработают без дополнительной настройки.
+
+Старая открытка из этого репозитория доступна по адресу `/postcard.html`.
+
+## Структура проекта
+
+```
+src/
+  app/                    страницы (App Router), все интерактивные — client components
+    wardrobe/             гардероб, add/ — добавление, item/?id= — редактирование
+    outfits/              мои образы, editor/?id= — конструктор
+    settings/             резервная копия, хранилище, установка
+    manifest.ts           Web App Manifest
+  domain/                 чистые типы и правила без React и без БД
+    types.ts              Item, Outfit, OutfitLayer, Category, Season…
+    slots.ts              слоты манекена: позиции, размеры, слои по умолчанию
+    outfitRules.ts        надевание вещи в слот, конфликты, «случайный образ»
+    colors.ts, filter.ts  палитра и определение цвета, фильтрация
+  data/                   слой хранения — единственное место, которое знает про IndexedDB
+    repositories.ts       интерфейсы ItemRepository, OutfitRepository, BlobStore, BackupPort
+    dexie/                реализация на Dexie (IndexedDB)
+    index.ts              getRepositories() — точка подмены реализации
+  services/
+    image/                ресайз, обрезка/поворот, обрезка прозрачных полей,
+                          определение цвета, удаление фона (+ Web Worker)
+    backup/               экспорт/импорт .zip через интерфейсы репозиториев
+    tryon/, suggestions/  контракты на будущее (см. ниже)
+  components/             UI: items/ (карточки, форма, кроппер), mannequin/ (холст Konva,
+                          SVG-манекен, лента вещей), ui/ (навигация, листы, тосты)
+  hooks/useData.ts        реактивные хуки поверх репозиториев
+public/sw.js              service worker
+```
+
+### Модель данных
+
+- `Item`: название, категория, цвет `{hex, name}`, сезоны, теги, `imageId` и `thumbId` (ссылки на картинки в BlobStore), размеры изображения, даты.
+- `Outfit`: название, манекен (`female` или `male`), сезон, `previewId`, список `layers`.
+- `OutfitLayer`: `itemId`, `slot`, `x`, `y` (центр в координатах манекена 600×1200), `scale`, `rotation`, `z`.
+
+Координаты слоёв не зависят от размера экрана, поэтому образ выглядит одинаково на телефоне и на десктопе.
+
+### Как заменить хранилище на бэкенд
+
+UI и хуки работают только через интерфейсы из `src/data/repositories.ts`. Чтобы перейти на Supabase или свой API:
+
+1. Создайте `src/data/supabase/` (или `api/`) с классами, реализующими `ItemRepository`, `OutfitRepository`, `BlobStore` и `BackupPort`. Например: таблицы `items` и `outfits` в Postgres, картинки в Supabase Storage, `subscribe()` через Realtime.
+2. В `src/data/index.ts` выбирайте реализацию по `NEXT_PUBLIC_STORAGE`.
+3. Перенос существующих данных пользователя: экспорт `.zip` из локальной версии → импорт в облачную (формат копии не зависит от хранилища).
+
+Менять UI для этого не нужно.
+
+## Что можно улучшить
+
+- **AI-примерка на фото пользователя.** Контракт уже есть в `src/services/tryon/types.ts`. Реализация: серверный маршрут `app/api/try-on/route.ts`, который хранит `REPLICATE_API_TOKEN` и вызывает IDM-VTON на Replicate, а клиент опрашивает статус задачи.
+- **Аккаунты и синхронизация.** Supabase Auth и реализация репозиториев (см. выше). В `Item` заложено место под `ownerId`, `syncedAt` и `version` для разрешения конфликтов.
+- **Подсказки сочетаемости.** Контракт есть в `src/services/suggestions/types.ts`. Можно начать с правил цветового круга и нейтральных цветов, позже подключить ML или LLM.
+- **Точное выделение на холсте.** Сейчас вещь выбирается по прямоугольнику изображения. Можно перейти на hit-test по альфа-каналу, чтобы прозрачные края куртки не перехватывали тап по свитеру под ней.
+- **Ручная доводка маски.** Кисть «стереть/вернуть» после автоматического удаления фона.
+- **Деформация вещей под позу манекена.** Сейчас вещи только масштабируются и поворачиваются.
+- **Тёмная тема, отмена/повтор в конструкторе, массовое добавление нескольких фото подряд.**
+- **Cross-origin isolation (COOP/COEP)** для многопоточного WASM: удаление фона на CPU станет в несколько раз быстрее. Для этого нужно раздавать модель со своего домена.
+- **Тесты.** Unit-тесты для `src/domain/*` (правила слотов, фильтры) и e2e на Playwright.
+
+## Лицензии
+
+`@imgly/background-removal` распространяется по **AGPL-3.0**. Для открытого некоммерческого проекта это подходит. Для закрытого коммерческого продукта нужна коммерческая лицензия IMG.LY или замена библиотеки, например собственная модель на `onnxruntime-web` или серверное API.
