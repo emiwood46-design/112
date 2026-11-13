@@ -1,0 +1,32 @@
+# Формат: категория|пакет|описание
+# ads  = реклама/телеметрия (рекомендуется удалить)
+# app  = предустановленные приложения (удаляйте, только если не пользуетесь)
+# Скрипт трогает только те пакеты, которые реально есть на ТВ, и спрашивает про каждый.
+ads|com.miui.systemAdSolution|Рекламный сервис Xiaomi (MSA)
+ads|com.miui.msa.global|Рекламный сервис Xiaomi (MSA global)
+ads|com.xiaomi.ad|Рекламный модуль Xiaomi
+ads|com.miui.analytics|Аналитика/телеметрия Xiaomi
+ads|com.xiaomi.mitv.advertise|Реклама PatchWall
+ads|com.xiaomi.mitv.tvpush.tvpushservice|Push-промо и уведомления Xiaomi
+ads|com.xiaomi.statistic|Сбор статистики Xiaomi
+ads|com.mitv.care|Сервис обратной связи/статистики Mi TV
+ads|com.xiaomi.mitv.feedback|Отправка отчётов Xiaomi
+ads|com.google.android.tvrecommendations|Рекомендации каналов Google (промо на главном экране)
+ads|com.google.android.leanbacklauncher.recommendations|Рекомендации на главном экране Android TV
+ads|com.google.android.feedback|Отправка отзывов Google
+app|com.netflix.ninja|Netflix
+app|com.amazon.amazonvideo.livingroom|Prime Video
+app|com.google.android.youtube.tvmusic|YouTube Music
+app|com.google.android.play.games|Google Play Игры
+app|com.google.android.videos|Google Play Фильмы
+app|com.spotify.tv.android|Spotify
+app|com.disney.disneyplus|Disney+
+app|com.xiaomi.mitv.karaoke|Караоке Xiaomi
+app|com.mitv.gallery|Галерея Mi TV
+app|com.xiaomi.mitv.calendar|Календарь Xiaomi
+app|com.xiaomi.mitv.shop|Магазин Xiaomi
+app|ru.ivi.client|ivi
+app|ru.kinopoisk.tv|Кинопоиск
+app|ru.more.play|Okko
+app|ru.rt.video.app.tv|Wink
+app|ru.mts.mtstv|KION
